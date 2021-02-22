@@ -48,7 +48,7 @@ class Post {
     };
 
     return this.postDate.toLocaleString("ru-RU", options);
-  }
+  };
 }
 
 class Posts {
@@ -64,11 +64,14 @@ class Posts {
 }
 
 class Twitter {
-  constructor({ listElem }) {
+  constructor({ user, listElem, modalElems, tweetElems }) {
     const fetchData = new FetchData();
+    this.user = user;
     this.tweets = new Posts();
     this.elements = {
       listElem: document.querySelector(listElem),
+      modal: modalElems,
+      tweetElems,
     };
 
     fetchData.getPost().then((data) => {
@@ -77,6 +80,9 @@ class Twitter {
         this.showAllPost();
       });
     });
+
+    this.elements.modal.forEach(this.handlerModal, this);
+    this.elements.tweetElems.forEach(this.addTweet, this);
   }
 
   renderPosts(tweets) {
@@ -131,9 +137,86 @@ class Twitter {
     this.renderPosts(this.tweets.posts);
   }
 
-  openModal() {}
+  handlerModal({ button, modal, overlay, close }) {
+    const buttonElem = document.querySelector(button),
+      modalElem = document.querySelector(modal),
+      overlayElem = document.querySelector(overlay),
+      closeElem = document.querySelector(close);
+
+    const openModal = () => {
+      modalElem.style.display = "block";
+    };
+    const closeModal = (elem, e) => {
+      const target = e.target;
+      if (target === elem) {
+        modalElem.style.display = "none";
+      }
+    };
+
+    buttonElem.addEventListener("click", openModal);
+
+    if (closeElem) {
+      closeElem.addEventListener("click", closeModal.bind(null, closeElem));
+    }
+    if (overlayElem) {
+      overlayElem.addEventListener("click", closeModal.bind(null, overlayElem));
+    }
+
+    this.handlerModal.closeModal = () => {
+      modalElem.style.display = "none";
+    };
+  }
+
+  addTweet({ text, img, submit }) {
+    const textElem = document.querySelector(text),
+      imgElem = document.querySelector(img),
+      submitElem = document.querySelector(submit);
+
+    let imgUrl = "";
+    let tempString = textElem.innerHTML;
+
+    submitElem.addEventListener("click", () => {
+      this.tweets.addPost({
+        userName: this.user.name,
+        nickname: this.user.nick,
+        text: textElem.innerHTML,
+        img: imgUrl,
+      });
+      this.showAllPost();
+      this.handlerModal.closeModal();
+    });
+
+    textElem.addEventListener("click", () => {
+      if(textElem.innerHTML === tempString){
+        textElem.innerHTML = "";
+      }
+    });
+
+    imgElem.addEventListener('click', () => {
+      imgUrl = prompt('Введите адрес изображения');
+    });
+  }
 }
 
 const twitter = new Twitter({
   listElem: ".tweet-list",
+  user: {
+    name: "Миша",
+    nick: "avatar",
+  },
+  modalElems: [
+    {
+      button: ".header__link_tweet",
+      modal: ".modal",
+      overlay: ".overlay",
+      close: ".modal-close__btn",
+    },
+  ],
+  tweetElems: [
+    {
+      text: ".modal .tweet-form__text",
+      img: ".modal .tweet-img__btn",
+      submit: ".modal .tweet-form__btn",
+    },
+  ],
 });
